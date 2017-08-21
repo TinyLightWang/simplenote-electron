@@ -90,6 +90,7 @@ function mapDispatchToProps( dispatch, { noteBucket } ) {
 		setSortType: thenReloadNotes( settingsActions.setSortType ),
 		toggleSortOrder: thenReloadNotes( settingsActions.toggleSortOrder ),
 
+		openTagList: () => dispatch( actionCreators.toggleNavigation() ),
 		resetAuth: () => dispatch( resetAuth() ),
 		setAuthorized: () => dispatch( setAuthorized() ),
 	};
@@ -159,10 +160,14 @@ export const App = connect( mapStateToProps, mapDispatchToProps )( React.createC
 		this.onNotesIndex();
 		this.onTagsIndex();
 
+		this.toggleShortcuts( true );
+
 		analytics.tracks.recordEvent( 'application_opened' );
 	},
 
 	componentWillUnmount: function() {
+		this.toggleShortcuts( false );
+
 		ipc.removeListener( 'appCommand', this.onAppCommand );
 	},
 
@@ -170,6 +175,27 @@ export const App = connect( mapStateToProps, mapDispatchToProps )( React.createC
 		if ( this.props.settings !== prevProps.settings ) {
 			ipc.send( 'settingsUpdate', this.props.settings );
 		}
+	},
+
+	handleShortcut( event ) {
+		const {
+			ctrlKey,
+			key,
+			metaKey,
+		} = event;
+
+		const cmdOrCtrl = ctrlKey || metaKey;
+
+		// open tag list
+		if ( cmdOrCtrl && 'T' === key && ! this.state.showNavigation ) {
+			this.props.openTagList();
+
+			event.stopPropagation();
+			event.preventDefault();
+			return false;
+		}
+
+		return true;
 	},
 
 	onAppCommand: function( event, command ) {
@@ -342,6 +368,14 @@ export const App = connect( mapStateToProps, mapDispatchToProps )( React.createC
 			note
 		} );
 		analytics.tracks.recordEvent( 'editor_versions_accessed' );
+	},
+
+	toggleShortcuts( doEnable ) {
+		if ( doEnable ) {
+			window.addEventListener( 'keydown', this.handleShortcut, true );
+		} else {
+			window.removeEventListener( 'keydown', this.handleShortcut, true );
+		}
 	},
 
 	render: function() {
