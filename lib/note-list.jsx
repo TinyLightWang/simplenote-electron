@@ -286,6 +286,7 @@ const NoteList = React.createClass( {
 			{ maxWait: TYPING_DEBOUNCE_MAX }
 		);
 
+		this.toggleShortcuts( true );
 		window.addEventListener( 'resize', this.recomputeHeights );
 	},
 
@@ -300,11 +301,49 @@ const NoteList = React.createClass( {
 	},
 
 	componentWillUnmount() {
+		this.toggleShortcuts( false );
 		window.removeEventListener( 'resize', this.recomputeHeights );
+	},
+
+	handleShortcut( event ) {
+		const {
+			ctrlKey,
+			key,
+			metaKey,
+			shiftKey,
+		} = event;
+
+		const cmdOrCtrl = ctrlKey || metaKey;
+
+		if ( cmdOrCtrl && shiftKey && ( key === 'ArrowUp' || key === 'K' ) ) {
+			this.props.onSelectNote( this.props.nextNote.id );
+
+			event.stopPropagation();
+			event.preventDefault();
+			return false;
+		}
+
+		if ( cmdOrCtrl && shiftKey && ( key === 'ArrowDown' || key === 'J' ) ) {
+			this.props.onSelectNote( this.props.prevNote.id );
+
+			event.stopPropagation();
+			event.preventDefault();
+			return false;
+		}
+
+		return true;
 	},
 
 	refList( r ) {
 		this.list = r;
+	},
+
+	toggleShortcuts( doEnable ) {
+		if ( doEnable ) {
+			window.addEventListener( 'keydown', this.handleShortcut, true );
+		} else {
+			window.removeEventListener( 'keydown', this.handleShortcut, true );
+		}
 	},
 
 	render() {
@@ -382,6 +421,13 @@ const mapStateToProps = ( {
 	const noteIndex = Math.max( state.previousIndex, 0 );
 	const selectedNote = state.note ? state.note : filteredNotes[ noteIndex ];
 	const selectedNoteId = get( selectedNote, 'id', state.selectedNoteId );
+	const selectedNoteIndex = filteredNotes.findIndex( ( { id } ) => id === selectedNoteId );
+
+	const nextNoteId = Math.max( 0, selectedNoteIndex - 1 );
+	const prevNoteId = Math.min( filteredNotes.length - 1, selectedNoteIndex + 1 );
+
+	const nextNote = filteredNotes[ nextNoteId ];
+	const prevNote = filteredNotes[ prevNoteId ];
 
 	/**
 	 * Although not used directly in the React component this value
@@ -407,8 +453,10 @@ const mapStateToProps = ( {
 
 	return {
 		filter: state.filter,
+		nextNote,
 		noteDisplay,
 		notes: filteredNotes,
+		prevNote,
 		selectedNoteTitle,
 		selectedNoteContent: get( selectedNote, 'data.content' ),
 		selectedNoteId,
