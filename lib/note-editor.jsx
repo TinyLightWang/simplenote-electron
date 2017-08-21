@@ -42,6 +42,10 @@ export const NoteEditor = React.createClass( {
 		};
 	},
 
+	componentDidMount() {
+		this.toggleShortcuts( true );
+	},
+
 	componentWillReceiveProps: function() {
 		this.setState( { revision: null } );
 	},
@@ -59,6 +63,36 @@ export const NoteEditor = React.createClass( {
 			window.print();
 			this.props.onNotePrinted();
 		}
+	},
+
+	componentWillUnmount() {
+		this.toggleShortcuts( false );
+	},
+
+	handleShortcut( event ) {
+		const {
+			ctrlKey,
+			key,
+			metaKey,
+		} = event;
+
+		const cmdOrCtrl = ctrlKey || metaKey;
+
+		// toggle editor mode
+		if ( cmdOrCtrl && 'P' === key && this.props.markdownEnabled ) {
+			const prevEditorMode = this.props.editorMode;
+			const nextEditorMode = prevEditorMode === 'edit'
+				? 'markdown'
+				: 'edit';
+
+			this.props.onSetEditorMode( nextEditorMode );
+
+			event.stopPropagation();
+			event.preventDefault();
+			return false;
+		}
+
+		return true;
 	},
 
 	onViewRevision: function( revision ) {
@@ -95,6 +129,14 @@ export const NoteEditor = React.createClass( {
 
 	setIsViewingRevisions: function( isViewing ) {
 		this.setState( { isViewingRevisions: isViewing } );
+	},
+
+	toggleShortcuts( doEnable ) {
+		if ( doEnable ) {
+			window.addEventListener( 'keydown', this.handleShortcut, true );
+		} else {
+			window.removeEventListener( 'keydown', this.handleShortcut, true );
+		}
 	},
 
 	render: function() {
