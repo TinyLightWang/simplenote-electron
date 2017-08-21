@@ -93,6 +93,7 @@ function mapDispatchToProps( dispatch, { noteBucket } ) {
 		openTagList: () => dispatch( actionCreators.toggleNavigation() ),
 		resetAuth: () => dispatch( resetAuth() ),
 		setAuthorized: () => dispatch( setAuthorized() ),
+		setSearchFocus: () => dispatch( actionCreators.setSearchFocus( { searchFocus: true } ) ),
 	};
 }
 
@@ -189,6 +190,15 @@ export const App = connect( mapStateToProps, mapDispatchToProps )( React.createC
 		// open tag list
 		if ( cmdOrCtrl && 'T' === key && ! this.state.showNavigation ) {
 			this.props.openTagList();
+
+			event.stopPropagation();
+			event.preventDefault();
+			return false;
+		}
+
+		// focus search field
+		if ( cmdOrCtrl && 'F' === key ) {
+			this.props.setSearchFocus();
 
 			event.stopPropagation();
 			event.preventDefault();
