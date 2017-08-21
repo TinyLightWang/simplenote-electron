@@ -439,7 +439,7 @@ export const App = connect( mapStateToProps, mapDispatchToProps )( React.createC
 								<SearchBar noteBucket={ noteBucket } />
 								<NoteList noteBucket={ noteBucket } />
 							</div>
-							<NoteEditor
+							{ selectedNote && <NoteEditor
 								allTags={ state.tags }
 								editorMode={state.editorMode}
 								filter={state.filter}
@@ -456,7 +456,7 @@ export const App = connect( mapStateToProps, mapDispatchToProps )( React.createC
 								onCloseNote={() => this.props.actions.closeNote()}
 								onNoteInfo={() => this.props.actions.toggleNoteInfo()}
 								shouldPrint={state.shouldPrint}
-								onNotePrinted={this.onNotePrinted} />
+								onNotePrinted={this.onNotePrinted} /> }
 							{ state.showNoteInfo &&
 								<NoteInfo noteBucket={ noteBucket } />
 							}

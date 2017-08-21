@@ -1,7 +1,7 @@
 import React, { PropTypes } from 'react';
 import highlight from 'highlight.js';
 import showdown from 'showdown';
-import { get, debounce, invoke } from 'lodash';
+import { get, debounce, invoke, noop } from 'lodash';
 import analytics from './analytics';
 import { viewExternalUrl } from './utils/url-utils';
 import NoteContentEditor from './note-content-editor';
@@ -22,7 +22,16 @@ export default React.createClass( {
 		note: PropTypes.object,
 		previewingMarkdown: PropTypes.bool,
 		fontSize: PropTypes.number,
-		onChangeContent: PropTypes.func.isRequired
+		onChangeContent: PropTypes.func.isRequired,
+		storeFocusEditor: PropTypes.func,
+		storeHasFocus: PropTypes.func,
+	},
+
+	getDefaultProps() {
+		return {
+			storeFocusEditor: noop,
+			storeHasFocus: noop,
+		}
 	},
 
 	componentWillMount: function() {
@@ -31,8 +40,15 @@ export default React.createClass( {
 	},
 
 	componentDidMount: function() {
+		this.props.storeFocusEditor( this.focusEditor );
+		this.props.storeHasFocus( this.hasFocus );
+
 		// Ensures note gets saved if user abruptly quits the app
 		window.addEventListener( 'beforeunload', this.queueNoteSave.flush );
+	},
+
+	focusEditor() {
+		this.focusContentEditor && this.focusContentEditor();
 	},
 
 	saveEditorRef( ref ) {
@@ -91,6 +107,10 @@ export default React.createClass( {
 		event.preventDefault();
 	},
 
+	hasFocus() {
+		return this.editorHasFocus && this.editorHasFocus();
+	},
+
 	onPreviewClick: function( event ) {
 		// open markdown preview links in a new window
 		for ( let node = event.target; node !== null; node = node.parentNode ) {
@@ -109,6 +129,14 @@ export default React.createClass( {
 
 		this.props.onChangeContent( note, content );
 		analytics.tracks.recordEvent( 'editor_note_edited' );
+	},
+
+	storeEditorHasFocus( f ) {
+		this.editorHasFocus = f;
+	},
+
+	storeFocusContentEditor( f ) {
+		this.focusContentEditor = f;
 	},
 
 	storePreview( ref ) {
@@ -151,6 +179,8 @@ export default React.createClass( {
 					>
 						<NoteContentEditor
 							ref={ this.saveEditorRef }
+							storeFocusEditor={ this.storeFocusContentEditor }
+							storeHasFocus={ this.storeEditorHasFocus }
 							content={ content }
 							filter={ filter }
 							onChangeContent={ this.queueNoteSave }

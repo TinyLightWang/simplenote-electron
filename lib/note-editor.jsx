@@ -92,7 +92,29 @@ export const NoteEditor = React.createClass( {
 			return false;
 		}
 
+		// toggle between tag editor and note editor
+		if ( cmdOrCtrl && 't' === key && this.props.isEditorActive ) {
+			// prefer focusing the edit field first
+			if ( ! this.editFieldHasFocus() ) {
+				this.focusNoteEditor && this.focusNoteEditor();
+
+				event.stopPropagation();
+				event.preventDefault();
+				return false;
+			} else if ( ! this.tagFieldHasFocus() ) {
+				this.focusTagField && this.focusTagField();
+
+				event.stopPropagation();
+				event.preventDefault();
+				return false;
+			}
+		}
+
 		return true;
+	},
+
+	editFieldHasFocus() {
+		return this.editorHasFocus && this.editorHasFocus();
 	},
 
 	onViewRevision: function( revision ) {
@@ -129,6 +151,26 @@ export const NoteEditor = React.createClass( {
 
 	setIsViewingRevisions: function( isViewing ) {
 		this.setState( { isViewingRevisions: isViewing } );
+	},
+
+	storeEditorHasFocus( f ) {
+		this.editorHasFocus = f;
+	},
+
+	storeFocusEditor( f ) {
+		this.focusNoteEditor = f;
+	},
+
+	storeFocusTagField( f ) {
+		this.focusTagField = f;
+	},
+
+	storeTagFieldHasFocus( f ) {
+		this.tagFieldHasFocus = f;
+	},
+
+	tagFieldHasFocus() {
+		return this.tagFieldHasFocus && this.tagFieldHasFocus();
 	},
 
 	toggleShortcuts( doEnable ) {
@@ -188,6 +230,8 @@ export const NoteEditor = React.createClass( {
 					{!!markdownEnabled && this.renderModeBar()}
 					<div className="note-editor-detail">
 						<NoteDetail
+							storeFocusEditor={ this.storeFocusEditor }
+							storeHasFocus={ this.storeEditorHasFocus }
 							filter={this.props.filter}
 							note={revision}
 							previewingMarkdown={markdownEnabled && editorMode === 'markdown'}
@@ -201,6 +245,8 @@ export const NoteEditor = React.createClass( {
 				}
 				{ ! isTrashed &&
 					<TagField
+						storeFocusTagField={ this.storeFocusTagField }
+						storeHasFocus={ this.storeTagFieldHasFocus }
 						allTags={ this.props.allTags.map( property( 'data.name' ) ) }
 						tags={tags}
 						onUpdateNoteTags={this.props.onUpdateNoteTags.bind( null, note ) } />
@@ -241,8 +287,9 @@ export const NoteEditor = React.createClass( {
 	}
 } );
 
-const mapStateToProps = ( { settings } ) => ( {
+const mapStateToProps = ( { appState: state, settings } ) => ( {
 	fontSize: settings.fontSize,
+	isEditorActive: ! state.showNavigation,
 	markdownEnabled: settings.markdownEnabled
 } );
 

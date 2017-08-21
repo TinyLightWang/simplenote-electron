@@ -2,6 +2,7 @@ import React, { Component, PropTypes } from 'react';
 import {
 	identity,
 	invoke,
+	noop,
 } from 'lodash';
 
 const KEY_TAB = 9;
@@ -19,6 +20,8 @@ export class TagInput extends Component {
 		inputRef: PropTypes.func,
 		onChange: PropTypes.func,
 		onSelect: PropTypes.func,
+		storeFocusInput: PropTypes.func,
+		storeHasFocus: PropTypes.func,
 		tagNames: PropTypes.arrayOf( PropTypes.string ).isRequired,
 		value: PropTypes.string.isRequired,
 	};
@@ -27,7 +30,14 @@ export class TagInput extends Component {
 		inputRef: identity,
 		onChange: identity,
 		onSelect: identity,
+		storeFocusInput: noop,
+		storeHasFocus: noop,
 	};
+
+	componentDidMount() {
+		this.props.storeFocusInput( this.focusInput );
+		this.props.storeHasFocus( this.hasFocus );
+	}
 
 	componentWillUnmount() {
 		invoke( this, 'inputField.removeEventListener', 'paste', this.removePastedFormatting, false );
@@ -64,6 +74,10 @@ export class TagInput extends Component {
 		const selection = window.getSelection();
 		selection.removeAllRanges();
 		selection.addRange( range );
+	};
+
+	hasFocus = () => {
+		return document.activeElement === this.inputField;
 	};
 
 	interceptKeys = event => invoke( {

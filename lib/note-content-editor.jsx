@@ -1,11 +1,12 @@
 import React, { PropTypes } from 'react';
+import ReactDOM from 'react-dom';
 import {
 	ContentState,
 	Editor,
 	EditorState,
 	Modifier,
 } from 'draft-js';
-import { includes, invoke, noop } from 'lodash';
+import { get, includes, invoke, noop } from 'lodash';
 
 import { LF_ONLY_NEWLINES } from './utils/export';
 import matchingTextDecorator from './editor/matching-text-decorator';
@@ -146,19 +147,31 @@ function continueList( editorState, listItemMatch ) {
 export default class NoteContentEditor extends React.Component {
 	static propTypes = {
 		content: PropTypes.string.isRequired,
-		onChangeContent: PropTypes.func.isRequired
-	}
+		onChangeContent: PropTypes.func.isRequired,
+		storeFocusEditor: PropTypes.func,
+		storeHasFocus: PropTypes.func,
+	};
+
+	static defaultProps = {
+		storeFocusEditor: noop,
+		storeHasFocus: noop,
+	};
 
 	state = {
 		editorState: EditorState.createWithContent(
 			ContentState.createFromText( this.props.content, '\n' ),
 			matchingTextDecorator( this.props.filter ),
 		)
-	}
+	};
 
 	componentWillMount() {
 		document.addEventListener( 'copy', this.stripFormattingFromSelectedText );
 		document.addEventListener( 'cut', this.stripFormattingFromSelectedText );
+	}
+
+	componentDidMount() {
+		this.props.storeFocusEditor( this.focus );
+		this.props.storeHasFocus( this.hasFocus );
 	}
 
 	componentWillUnmount() {
@@ -224,6 +237,20 @@ export default class NoteContentEditor extends React.Component {
 	focus = () => {
 		invoke( this, 'editor.focus' );
 	}
+
+	/**
+	 * This is highly-specific and coupled to the Draft-JS
+	 * interface but for now it's what we have to do to
+	 * determine if the editor is focused. Should we come
+	 * up with a better method to determine if the user is
+	 * currently working in the editor/editor area we can
+	 * replace this function with that method.
+	 *
+	 * @returns {boolean} whether the editor area is focused
+	 */
+	hasFocus = () => {
+		return this.editor && document.activeElement === get( ReactDOM.findDOMNode( this.editor ), 'children[0].children[0]' );
+	};
 
 	onTab = ( e ) => {
 		const { editorState } = this.state;
